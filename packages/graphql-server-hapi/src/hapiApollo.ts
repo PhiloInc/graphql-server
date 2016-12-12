@@ -125,8 +125,7 @@ async function getGraphQLOptions(request: Request, reply: IReply): Promise<{}> {
 async function processQuery(graphqlParams, optionsObject: GraphQLOptions, isBatch: boolean, reply) {
   const formatErrorFn = optionsObject.formatError || formatError;
 
-  let responses: GraphQLResult[] = [];
-  for (let query of graphqlParams) {
+  const requests = graphqlParams.map(async (query) => {
     try {
       // Shallow clone context for queries in batches. This allows
       // users to distinguish multiple queries in the batch and to
@@ -154,11 +153,12 @@ async function processQuery(graphqlParams, optionsObject: GraphQLOptions, isBatc
         params = optionsObject.formatParams(params);
       }
 
-      responses.push(await runQuery(params));
+      return await runQuery(params);
     } catch (e) {
-      responses.push({ errors: [formatErrorFn(e)] });
+      return { errors: [formatErrorFn(e)] };
     }
-  }
+  });
+  const responses: GraphQLResult[] = await Promise.all(requests);
   return reply(responses);
 }
 
