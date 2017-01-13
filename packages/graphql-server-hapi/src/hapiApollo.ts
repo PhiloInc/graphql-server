@@ -1,6 +1,6 @@
 import * as Boom from 'boom';
 import { Server, Request, IReply } from 'hapi';
-import { GraphQLResult, formatError } from 'graphql';
+import { ExecutionResult, formatError } from 'graphql';
 import * as GraphiQL from 'graphql-server-module-graphiql';
 import { GraphQLOptions, runQuery } from 'graphql-server-core';
 

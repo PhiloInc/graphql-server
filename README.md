@@ -36,6 +36,7 @@ where variant is one of the following:
 
 ```js
 import express from 'express';
+import bodyParser from 'body-parser';
 import { graphqlExpress } from 'graphql-server-express';
 
 const myGraphQLSchema = // ... define or import your schema here!
@@ -106,8 +107,9 @@ server.start((err) => {
 
 ### Koa
 ```js
-import koa from 'koa';
-import koaRouter from 'koa-router';
+import koa from 'koa'; // koa@2
+import koaBody from 'koa-bodyparser'; // koa-bodyparser@next
+import koaRouter from 'koa-router'; // koa-router@next
 import { graphqlKoa } from 'graphql-server-koa';
 
 const app = new koa();
