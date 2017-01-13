@@ -158,7 +158,7 @@ async function processQuery(graphqlParams, optionsObject: GraphQLOptions, isBatc
       return { errors: [formatErrorFn(e)] };
     }
   });
-  const responses: GraphQLResult[] = await Promise.all(requests);
+  const responses: ExecutionResult[] = await Promise.all(requests);
   return reply(responses);
 }
 
