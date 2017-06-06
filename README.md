@@ -1,11 +1,11 @@
-# GraphQL Server for Express, Connect, Hapi and Koa
+# GraphQL Server for Express, Connect, Hapi, Koa, Restify and AWS Lambda
 
 [![npm version](https://badge.fury.io/js/graphql-server-core.svg)](https://badge.fury.io/js/graphql-server-core)
-[![Build Status](https://travis-ci.org/apollostack/graphql-server.svg?branch=master)](https://travis-ci.org/apollostack/graphql-server)
-[![Coverage Status](https://coveralls.io/repos/github/apollostack/graphql-server/badge.svg?branch=master)](https://coveralls.io/github/apollostack/graphql-server?branch=master)
-[![Get on Slack](https://img.shields.io/badge/slack-join-orange.svg)](http://www.apollostack.com/#slack)
+[![Build Status](https://travis-ci.org/apollographql/graphql-server.svg?branch=master)](https://travis-ci.org/apollographql/graphql-server)
+[![Coverage Status](https://coveralls.io/repos/github/apollographql/graphql-server/badge.svg?branch=master)](https://coveralls.io/github/apollographql/graphql-server?branch=master)
+[![Get on Slack](https://img.shields.io/badge/slack-join-orange.svg)](http://www.apollodata.com/#slack)
 
-GraphQL Server is a community-maintained open-source GraphQL server. It works with all Node.js HTTP server frameworks: Express, Connect, Hapi and Koa.
+GraphQL Server is a community-maintained open-source GraphQL server. It works with all Node.js HTTP server frameworks: Express, Connect, Hapi, Koa and Restify.
 
 ## Principles
 
@@ -31,6 +31,9 @@ where variant is one of the following:
  - express
  - koa
  - hapi
+ - restify
+ - lambda
+ - micro
 
 ### Express
 
@@ -44,6 +47,7 @@ const PORT = 3000;
 
 var app = express();
 
+// bodyParser is needed just for POST.
 app.use('/graphql', bodyParser.json(), graphqlExpress({ schema: myGraphQLSchema }));
 
 app.listen(PORT);
@@ -60,6 +64,7 @@ const PORT = 3000;
 
 var app = connect();
 
+// bodyParser is needed just for POST.
 app.use('/graphql', bodyParser.json());
 app.use('/graphql', graphqlConnect({ schema: myGraphQLSchema }));
 
@@ -108,20 +113,67 @@ server.start((err) => {
 ### Koa
 ```js
 import koa from 'koa'; // koa@2
-import koaBody from 'koa-bodyparser'; // koa-bodyparser@next
 import koaRouter from 'koa-router'; // koa-router@next
+import koaBody from 'koa-bodyparser'; // koa-bodyparser@next
 import { graphqlKoa } from 'graphql-server-koa';
 
 const app = new koa();
 const router = new koaRouter();
 const PORT = 3000;
 
+// koaBody is needed just for POST.
 app.use(koaBody());
 
 router.post('/graphql', graphqlKoa({ schema: myGraphQLSchema }));
+router.get('/graphql', graphqlKoa({ schema: myGraphQLSchema }));
+
 app.use(router.routes());
 app.use(router.allowedMethods());
 app.listen(PORT);
+```
+
+### Restify
+```js
+import restify from 'restify';
+import { graphqlRestify, graphiqlRestify } from 'graphql-server-restify';
+
+const PORT = 3000;
+
+const server = restify.createServer({
+  title: 'GraphQL Server'
+});
+
+const graphQLOptions = { schema: myGraphQLSchema };
+
+server.use(restify.bodyParser());
+server.use(restify.queryParser());
+
+server.post('/graphql', graphqlRestify(graphQLOptions));
+server.get('/graphql', graphqlRestify(graphQLOptions));
+
+server.get('/graphiql', graphiqlRestify({ endpointURL: '/graphql' }));
+
+server.listen(PORT, () => console.log(`Listening on ${PORT}`));
+```
+
+### AWS Lambda
+
+Lambda function should be run with Node.js v4.3. Requires an API Gateway with Lambda Proxy Integration.
+
+```js
+var server = require("graphql-server-lambda");
+
+exports.handler = server.graphqlLambda({ schema: myGraphQLSchema });
+```
+
+### Zeit Micro
+
+Micro function requires the micro module
+
+```js
+var server = require("graphql-server-micro");
+
+module.exports = server.microGraphql({ schema: myGraphQLSchema });
 ```
 
 ## Options
@@ -158,7 +210,7 @@ graphqlOptions = {
 
 GraphQL Server and express-graphql are more or less the same thing (GraphQL middleware for Node.js), but there are a few key differences:
 
-* express-graphql works with Express and Connect, GraphQL Server supports Express, Connect, Hapi and Koa.
+* express-graphql works with Express and Connect, GraphQL Server supports Express, Connect, Hapi, Koa and Restify.
 * express-graphql's main goal is to be a minimal reference implementation, whereas GraphQL Server's goal is to be a complete production-ready GraphQL server.
 * Compared to express-graphql, GraphQL Server has a simpler interface and supports exactly one way of passing queries.
 * GraphQL Server separates serving GraphiQL (GraphQL UI) from responding to GraphQL requests.
@@ -170,9 +222,36 @@ Despite express-graphql being a reference implementation, GraphQL Server is actu
 
 That said, GraphQL Server is heavily inspired by express-graphql (it's the reference implementation after all). Rather than seeing the two as competing alternatives, we think that they both have separate roles in the GraphQL ecosystem: express-graphql is a reference implementation, and GraphQL Server is a GraphQL server to be used in production and evolve quickly with the needs of the community. Over time, express-graphql can adopt those features of GraphQL Server that have proven their worth and become established more widely.
 
+### application/graphql requests
+
+express-graphql supports the `application/graphql` Content-Type for requests, which is an alternative to `application/json` request with only the query part sent as text. In the same way that we use `bodyParser.json` to parse `application/json` requests for graphql-server, we can use `bodyParser.text` plus one extra step in order to also parse `application/graphql` requests. Here's an example for express:
+
+```js
+import express from 'express';
+import bodyParser from 'body-parser';
+import { graphqlExpress } from 'graphql-server-express';
+
+const myGraphQLSchema = // ... define or import your schema here!
+
+const helperMiddleware = [
+    bodyParser.json(),
+    bodyParser.text({ type: 'application/graphql' }),
+    (req, res, next) => {
+        if (req.is('application/graphql')) {
+            req.body = { query: req.body };
+        }
+        next();
+    }
+];
+
+express()
+    .use('/graphql', ...helperMiddleware, graphqlExpress({ schema: myGraphQLSchema }))
+    .listen(3000);
+```
+
 ## GraphQL Server Development
 
-If you want to develop apollo server locally you must follow the following instructions:
+If you want to develop GraphQL Server locally you must follow the following instructions:
 
 * Fork this repository
 

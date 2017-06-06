@@ -6,7 +6,6 @@
 // TODO: in the future, build the GraphiQL app on the server, so it does not
 // depend on any CDN and can be run offline.
 
-
 /*
  * Arguments:
  *
@@ -21,15 +20,17 @@
 
 export type GraphiQLData = {
   endpointURL: string,
+  subscriptionsEndpoint?: string,
   query?: string,
   variables?: Object,
   operationName?: string,
   result?: Object,
-  passHeader?: string
+  passHeader?: string,
 };
 
 // Current latest version of GraphiQL.
-const GRAPHIQL_VERSION = '0.8.0';
+const GRAPHIQL_VERSION = '0.10.2';
+const SUBSCRIPTIONS_TRANSPORT_VERSION = '0.7.0';
 
 // Ensures string values are safe to be used within a <script> tag.
 // TODO: I don't think that's the right escape function
@@ -39,6 +40,8 @@ function safeSerialize(data) {
 
 export function renderGraphiQL(data: GraphiQLData): string {
   const endpointURL = data.endpointURL;
+  const subscriptionsEndpoint = data.subscriptionsEndpoint;
+  const usingSubscriptions = !!subscriptionsEndpoint;
   const queryString = data.query;
   const variablesString =
     data.variables ? JSON.stringify(data.variables, null, 2) : null;
@@ -67,6 +70,10 @@ export function renderGraphiQL(data: GraphiQLData): string {
   <script src="//cdn.jsdelivr.net/react/15.0.0/react.min.js"></script>
   <script src="//cdn.jsdelivr.net/react/15.0.0/react-dom.min.js"></script>
   <script src="//cdn.jsdelivr.net/graphiql/${GRAPHIQL_VERSION}/graphiql.min.js"></script>
+  ${usingSubscriptions ?
+    `<script src="//unpkg.com/subscriptions-transport-ws@${SUBSCRIPTIONS_TRANSPORT_VERSION}/browser/client.js"></script>` +
+    '<script src="//unpkg.com/graphiql-subscriptions-fetcher@0.0.2/browser/client.js"></script>'
+    : ''}
 </head>
 <body>
   <script>
@@ -98,28 +105,41 @@ export function renderGraphiQL(data: GraphiQLData): string {
         otherParams[k] = parameters[k];
       }
     }
+
+    var fetcher;
+
+    if (${usingSubscriptions}) {
+      var subscriptionsClient = new window.SubscriptionsTransportWs.SubscriptionClient('${subscriptionsEndpoint}', {
+        reconnect: true
+      });
+      fetcher = window.GraphiQLSubscriptionsFetcher.graphQLFetcher(subscriptionsClient, graphQLFetcher);
+    } else {
+      fetcher = graphQLFetcher;
+    }
+
     // We don't use safe-serialize for location, because it's not client input.
     var fetchURL = locationQuery(otherParams, '${endpointURL}');
+
     // Defines a GraphQL fetcher using the fetch API.
     function graphQLFetcher(graphQLParams) {
-      return fetch(fetchURL, {
-        method: 'post',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-          ${passHeader}
-        },
-        body: JSON.stringify(graphQLParams),
-        credentials: 'include',
-      }).then(function (response) {
-        return response.text();
-      }).then(function (responseBody) {
-        try {
-          return JSON.parse(responseBody);
-        } catch (error) {
-          return responseBody;
-        }
-      });
+        return fetch(fetchURL, {
+          method: 'post',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            ${passHeader}
+          },
+          body: JSON.stringify(graphQLParams),
+          credentials: 'include',
+        }).then(function (response) {
+          return response.text();
+        }).then(function (responseBody) {
+          try {
+            return JSON.parse(responseBody);
+          } catch (error) {
+            return responseBody;
+          }
+        });
     }
     // When the query and variables string is edited, update the URL bar so
     // that it can be easily shared.
@@ -136,12 +156,12 @@ export function renderGraphiQL(data: GraphiQLData): string {
       updateURL();
     }
     function updateURL() {
-      history.replaceState(null, null, locationQuery(parameters));
+      history.replaceState(null, null, locationQuery(parameters) + window.location.hash);
     }
     // Render <GraphiQL /> into the body.
     ReactDOM.render(
       React.createElement(GraphiQL, {
-        fetcher: graphQLFetcher,
+        fetcher: fetcher,
         onEditQuery: onEditQuery,
         onEditVariables: onEditVariables,
         onEditOperationName: onEditOperationName,

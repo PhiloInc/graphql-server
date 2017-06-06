@@ -1,3 +1,4 @@
+/* tslint:disable:no-unused-expression */
 import { expect } from 'chai';
 import { stub } from 'sinon';
 import 'mocha';
@@ -23,7 +24,7 @@ import { makeCompatible } from 'meteor-promise';
 import Fiber = require('fibers');
 makeCompatible(Promise, Fiber);
 
-const QueryType = new GraphQLObjectType({
+const queryType = new GraphQLObjectType({
     name: 'QueryType',
     fields: {
         testString: {
@@ -71,15 +72,15 @@ const QueryType = new GraphQLObjectType({
     },
 });
 
-const Schema = new GraphQLSchema({
-    query: QueryType,
+const schema = new GraphQLSchema({
+    query: queryType,
 });
 
 describe('runQuery', () => {
   it('returns the right result when query is a string', () => {
       const query = `{ testString }`;
       const expected = { testString: 'it works' };
-      return runQuery({ schema: Schema, query: query })
+      return runQuery({ schema, query: query })
       .then((res) => {
           return expect(res.data).to.deep.equal(expected);
       });
@@ -88,7 +89,7 @@ describe('runQuery', () => {
   it('returns the right result when query is a document', () => {
       const query = parse(`{ testString }`);
       const expected = { testString: 'it works' };
-      return runQuery({ schema: Schema, query: query })
+      return runQuery({ schema, query: query })
       .then((res) => {
           return expect(res.data).to.deep.equal(expected);
       });
@@ -98,7 +99,7 @@ describe('runQuery', () => {
     const query = `query { test `;
     const expected = /Syntax Error GraphQL/;
     return runQuery({
-        schema: Schema,
+        schema,
         query: query,
         variables: { base: 1 },
     }).then((res) => {
@@ -110,10 +111,10 @@ describe('runQuery', () => {
 
   it('sends stack trace to error if in an error occurs and debug mode is set', () => {
     const query = `query { testError }`;
-    const expected = /at resolveOrError/;
+    const expected = /at resolveFieldValueOrError/;
     const logStub = stub(console, 'error');
     return runQuery({
-        schema: Schema,
+        schema,
         query: query,
         debug: true,
     }).then((res) => {
@@ -127,7 +128,7 @@ describe('runQuery', () => {
     const query = `query { testError }`;
     const logStub = stub(console, 'error');
     return runQuery({
-        schema: Schema,
+        schema,
         query: query,
         debug: false,
     }).then((res) => {
@@ -140,7 +141,7 @@ describe('runQuery', () => {
       const query = `query TestVar($base: String){ testArgumentValue(base: $base) }`;
       const expected = 'Variable "$base" of type "String" used in position expecting type "Int!".';
       return runQuery({
-          schema: Schema,
+          schema,
           query: query,
           variables: { base: 1 },
       }).then((res) => {
@@ -156,7 +157,7 @@ describe('runQuery', () => {
       const query = parse(`query TestVar($base: String){ testArgumentValue(base: $base) }`);
       const expected = { testArgumentValue: 15 };
       return runQuery({
-          schema: Schema,
+          schema,
           query: query,
           variables: { base: 1 },
       }).then((res) => {
@@ -167,7 +168,7 @@ describe('runQuery', () => {
   it('correctly passes in the rootValue', () => {
       const query = `{ testRootValue }`;
       const expected = { testRootValue: 'it also works' };
-      return runQuery({ schema: Schema, query: query, rootValue: 'it also' })
+      return runQuery({ schema, query: query, rootValue: 'it also' })
       .then((res) => {
           return expect(res.data).to.deep.equal(expected);
       });
@@ -176,7 +177,7 @@ describe('runQuery', () => {
   it('correctly passes in the context', () => {
       const query = `{ testContextValue }`;
       const expected = { testContextValue: 'it still works' };
-      return runQuery({ schema: Schema, query: query, context: 'it still' })
+      return runQuery({ schema, query: query, context: 'it still' })
       .then((res) => {
           return expect(res.data).to.deep.equal(expected);
       });
@@ -186,7 +187,7 @@ describe('runQuery', () => {
       const query = `{ testContextValue }`;
       const expected = { testContextValue: 'it still works' };
       return runQuery({
-          schema: Schema,
+          schema,
           query: query,
           context: 'it still',
           formatResponse: (response, { context }) => {
@@ -204,7 +205,7 @@ describe('runQuery', () => {
       const query = `query TestVar($base: Int!){ testArgumentValue(base: $base) }`;
       const expected = { testArgumentValue: 6 };
       return runQuery({
-          schema: Schema,
+          schema,
           query: query,
           variables: { base: 1 },
       }).then((res) => {
@@ -216,7 +217,7 @@ describe('runQuery', () => {
       const query = `query TestVar($base: Int!){ testArgumentValue(base: $base) }`;
       const expected = 'Variable "$base" of required type "Int!" was not provided.';
       return runQuery({
-          schema: Schema,
+          schema,
           query: query,
       }).then((res) => {
           return expect(res.errors[0].message).to.deep.equal(expected);
@@ -225,7 +226,7 @@ describe('runQuery', () => {
 
     it('supports yielding resolver functions', () => {
         return runQuery({
-            schema: Schema,
+            schema,
             query: `{ testAwaitedValue }`,
         }).then((res) => {
             expect(res.data).to.deep.equal({
@@ -245,7 +246,7 @@ describe('runQuery', () => {
         const expected = {
             testString: 'it works',
         };
-        return runQuery({ schema: Schema, query: query, operationName: 'Q1' })
+        return runQuery({ schema, query: query, operationName: 'Q1' })
         .then((res) => {
             return expect(res.data).to.deep.equal(expected);
         });
@@ -262,7 +263,7 @@ describe('runQuery', () => {
             testString: 'it works',
         };
         return runQuery({
-            schema: Schema,
+            schema,
             query: query,
             operationName: 'Q1',
             variables: { test: 123 },
