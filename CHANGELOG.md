@@ -1,7 +1,57 @@
 # Changelog
 
-### VNEXT
-* **Security Fix** GET queries did not run through validation ([@DxCx](https://github.com/DxCx)) on [#424](https://github.com/apollographql/graphql-server/pull/424)
+### vNEXT
+* Added support for the vhost option for Hapi [PR #611](https://github.com/apollographql/apollo-server/pull/611)
+* Include readme for npm packages
+
+### v1.1.6
+* Fixes bug where CORS would not allow `Access-Control-Allow-Origin: *` with credential 'include', changed to 'same-origin' [Issue #514](https://github.com/apollographql/apollo-server/issues/514)
+* Update apollo-server-lambda README to reflect new package name.
+* Add support for connectionParams in GraphiQL plugin options [#452](https://github.com/apollographql/apollo-server/issues/452) [PR 548](https://github.com/apollographql/apollo-server/pull/548)
+
+### v1.1.2
+* Fixed bug with no URL query params with GraphiQL on Lambda [Issue #504](https://github.com/apollographql/apollo-server/issues/504) [PR #512](https://github.com/apollographql/apollo-server/pull/503)
+
+### v1.1.1
+* Added support for Azure Functions [#503](https://github.com/apollographql/apollo-server/pull/503)
+
+### v1.1.0
+
+* Added ability to provide custom default field resolvers [#482](https://github.com/apollographql/apollo-server/pull/482)
+* Add `tracing` option to collect and expose trace data in the [Apollo Tracing format](https://github.com/apollographql/apollo-tracing)
+* Add support for GraphiQL editor themes in [#484](https://github.com/apollographql/apollo-server/pull/484) as requested in [#444](https://github.com/apollographql/apollo-server/issues/444)
+* Add support for full websocket using GraphiQL [#491](https://github.com/apollographql/graphql-server/pull/491)
+* Updated restify lib ([@yucun](https://github.com/liyucun/)) in [#472](https://github.com/apollographql/apollo-server/issues/472)
+* Updated package apollo-server-micro, updated micro in devDependencies and peerDependencies to ^8.0.1
+
+### v1.0.3
+
+* Revert [#463](https://github.com/apollographql/graphql-server/pull/463),
+  because it's a breaking change that shouldn't have been a patch update.
+
+### v1.0.2
+* Rename packages from graphql-server- to apollo-server- [#465](https://github.com/apollographql/apollo-server/pull/465). We'll continue to publish `graphql-server-` packages that depend on the renamed `apollo-server-` packages for the time being, to ensure backwards compatibility.
+
+### v1.0.1
+* Fix Express package not calling the callback on completion ([@chemdrew](https://github.com/chemdrew)) in [#463](https://github.com/apollographql/graphql-server/pull/463)
+
+### v1.0.0
+* Add package readmes for Express, Hapi, Koa, Restify ([@helfer](https://github.com/helfer)) in [#442](https://github.com/apollographql/graphql-server/pull/442)
+* Updated & fixed typescript typings ([@helfer](https://github.com/helfer)) in [#440](https://github.com/apollographql/graphql-server/pull/440)
+
+### v0.9.0
+* Allow GraphiQLOptions to be a function ([@NeoPhi](https://github.com/NeoPhi)) on [#426](https://github.com/apollographql/graphql-server/pull/426)
+
+### v0.8.5
+* Fix: graphql-server-micro now properly returns response promises [#401](https://github.com/apollographql/graphql-server/pull/401)
+
+### v0.8.4
+### v0.8.3
+### v0.8.2
+* Fix issue with auto-updating dependencies that caused fibers to update accidentally ([@helfer](https://github.com/helfer)) on [#425](https://github.com/apollographql/graphql-server/pull/425)
+
+### v0.8.1
+* **Security Fix** Ensure queries submitted via HTTP GET run through validation ([@DxCx](https://github.com/DxCx)) on [#424](https://github.com/apollographql/graphql-server/pull/424)
 
 ### v0.8.0
 * Persist `window.location.hash` on URL updates [#386](https://github.com/apollographql/graphql-server/issues/386)
@@ -13,7 +63,6 @@
 
 ### v0.7.1
 * Fix graphiql fetcher to use endpointURL parameter instead of hardcoded URI.[#365](https://github.com/apollographql/graphql-server/issues/356)
-
 
 ### v0.7.0
 * Add Zeit Micro Integration [#324](https://github.com/apollographql/graphql-server/issues/324)
